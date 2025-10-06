@@ -5,19 +5,8 @@ import { DatabaseService } from './database/database.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const rawCorsOrigins = process.env.CORS_ORIGIN || process.env.CLIENT_ORIGIN;
-
-  if (!rawCorsOrigins) {
-    throw new Error('CORS_ORIGIN env variable is required');
-  }
-
-  const corsOrigins = rawCorsOrigins
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-
   app.enableCors({
-    origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
+    origin: true,
     credentials: true,
   });
 
