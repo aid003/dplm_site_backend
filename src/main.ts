@@ -17,6 +17,14 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // Настройка WebSocket для поддержки CORS
+  const io = app.getHttpServer();
+  io.on('connection', (socket) => {
+    socket.on('error', (error) => {
+      logger.error('WebSocket error:', error);
+    });
+  });
+
   // Увеличиваем лимиты body-parser, чтобы предотвратить PayloadTooLargeError при больших телах
   app.use(json({ limit: '100mb' }));
   app.use(urlencoded({ limit: '100mb', extended: true }));

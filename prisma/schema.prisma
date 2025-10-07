@@ -29,6 +29,8 @@ model User {
   sessions  Session[]
   projectMemberships ProjectMember[]
   ownedProjects Project[]      @relation("ProjectOwner")
+  fileVersions FileVersion[]
+  drafts    FileDraft[]
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 }
@@ -63,6 +65,71 @@ model Project {
   owner       User?          @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId     Int?
   members     ProjectMember[]
+  files       ProjectFile[]
+  fileVersions FileVersion[]
+  drafts      FileDraft[]
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+}
+
+model ProjectFile {
+  id          Int       @id @default(autoincrement())
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   Int
+  path        String
+  name        String
+  type        FileType
+  size        Int
+  mimeType    String?
+  content     String?
+  permissions FilePermissions @default(READ_WRITE)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  versions    FileVersion[]
+  drafts      FileDraft[]
+
+  @@unique([projectId, path])
+  @@index([projectId, type])
+}
+
+model FileVersion {
+  id          Int       @id @default(autoincrement())
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   Int
+  file        ProjectFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  fileId      Int
+  content     String
+  size        Int
+  author      User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId    Int?
+  createdAt   DateTime  @default(now())
+  message     String?
+
+  @@index([fileId, createdAt])
+}
+
+model FileDraft {
+  id          Int       @id @default(autoincrement())
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   Int
+  file        ProjectFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  fileId      Int
+  content     String
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId    Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([projectId, fileId, authorId])
+  @@index([projectId, authorId])
+}
+
+enum FileType {
+  FILE
+  DIRECTORY
+}
+
+enum FilePermissions {
+  READ_ONLY
+  READ_WRITE
 }
