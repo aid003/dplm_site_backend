@@ -2,13 +2,24 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DatabaseService } from './database/database.service';
+import { LoggerService } from './logger/logger.service';
+import { json, urlencoded } from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const logger = new LoggerService('Bootstrap');
+  const app = await NestFactory.create(AppModule, {
+    logger,
+  });
   app.enableCors({
-    origin: true,
+    origin: process.env.CORS_ORIGIN || true,
+    methods: 'GET,POST,PATCH,DELETE',
+    allowedHeaders: 'Content-Type,Authorization',
     credentials: true,
   });
+
+  // Увеличиваем лимиты body-parser, чтобы предотвратить PayloadTooLargeError при больших телах
+  app.use(json({ limit: '100mb' }));
+  app.use(urlencoded({ limit: '100mb', extended: true }));
 
   app.setGlobalPrefix('api');
 
@@ -27,4 +38,9 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 8000);
 }
-bootstrap();
+
+void bootstrap().catch((error) => {
+  // Логгер недоступен здесь, так как приложение не запустилось
+  console.error('Application failed to start:', error);
+  process.exit(1);
+});

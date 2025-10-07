@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { hash, compare } from 'bcryptjs';
 import type { User } from 'generated/prisma';
 import { DatabaseService } from '../database/database.service';
+import { LoggerService } from '../logger/logger.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -11,7 +12,12 @@ const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly logger: LoggerService,
+  ) {
+    this.logger.log('AuthService initialized', 'AuthService');
+  }
 
   get cookieName(): string {
     return COOKIE_NAME;
@@ -22,11 +28,17 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
+    this.logger.log(`Attempting to register user: ${dto.email}`, 'AuthService');
+
     const existingUser = await this.db.user.findUnique({
       where: { email: dto.email.toLowerCase() },
     });
 
     if (existingUser) {
+      this.logger.warn(
+        `Registration failed - user already exists: ${dto.email}`,
+        'AuthService',
+      );
       throw new HttpException(
         { message: 'User already exists' },
         HttpStatus.CONFLICT,
@@ -43,6 +55,11 @@ export class AuthService {
       },
     });
 
+    this.logger.log(
+      `User registered successfully: ${user.email} (ID: ${user.id})`,
+      'AuthService',
+    );
+
     const session = await this.createSession(user.id);
 
     return {
@@ -52,11 +69,17 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
+    this.logger.log(`Login attempt for user: ${dto.email}`, 'AuthService');
+
     const user = await this.db.user.findUnique({
       where: { email: dto.email.toLowerCase() },
     });
 
     if (!user) {
+      this.logger.warn(
+        `Login failed - user not found: ${dto.email}`,
+        'AuthService',
+      );
       throw new HttpException(
         { message: 'Invalid credentials' },
         HttpStatus.UNAUTHORIZED,
@@ -66,11 +89,20 @@ export class AuthService {
     const isValid = await compare(dto.password, user.passwordHash);
 
     if (!isValid) {
+      this.logger.warn(
+        `Login failed - invalid password for user: ${dto.email}`,
+        'AuthService',
+      );
       throw new HttpException(
         { message: 'Invalid credentials' },
         HttpStatus.UNAUTHORIZED,
       );
     }
+
+    this.logger.log(
+      `User logged in successfully: ${user.email} (ID: ${user.id})`,
+      'AuthService',
+    );
 
     const session = await this.createSession(user.id);
 

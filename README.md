@@ -23,7 +23,48 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository with Winston logging support.
+
+## Logging
+
+This project uses Winston for structured logging with the following features:
+
+### Features:
+- **Structured JSON logging** for production
+- **Colored console output** for development
+- **Multiple log levels**: error, warn, info, debug, verbose
+- **File logging** in production environment
+- **Context-aware logging** with service names
+
+### Environment Variables:
+- `LOG_LEVEL`: Set minimum log level (error, warn, info, debug, verbose). Default: info
+- `NODE_ENV`: Set to 'production' to enable file logging
+
+### Usage in Services:
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { LoggerService } from '../logger/logger.service';
+
+@Injectable()
+export class MyService {
+  constructor(private readonly logger: LoggerService) {}
+
+  async myMethod() {
+    this.logger.log('Starting operation', 'MyService');
+    try {
+      // Your logic here
+      this.logger.log('Operation completed successfully', 'MyService');
+    } catch (error) {
+      this.logger.error('Operation failed', error.stack, 'MyService');
+    }
+  }
+}
+```
+
+### Log Files (Production):
+- `logs/error.log` - Error level logs only
+- `logs/combined.log` - All log levels
 
 ## Project setup
 
