@@ -67,7 +67,7 @@ export class FileOperationsService {
     this.filesGateway.notifyFileChanged(numericProjectId, {
       type: 'file_created',
       filePath: fullPath,
-      userId,
+      userId: String(userId),
       timestamp: new Date().toISOString(),
     });
 
@@ -126,7 +126,7 @@ export class FileOperationsService {
     this.filesGateway.notifyFileChanged(numericProjectId, {
       type: 'directory_created',
       filePath: fullPath,
-      userId,
+      userId: String(userId),
       timestamp: new Date().toISOString(),
     });
 
@@ -204,7 +204,7 @@ export class FileOperationsService {
     this.filesGateway.notifyFileChanged(numericProjectId, {
       type: 'file_deleted',
       filePath: normalizedPath,
-      userId,
+      userId: String(userId),
       timestamp: new Date().toISOString(),
     });
 
@@ -262,7 +262,7 @@ export class FileOperationsService {
       type: 'file_moved',
       filePath: targetPath,
       oldPath: sourcePath,
-      userId,
+      userId: String(userId),
       timestamp: new Date().toISOString(),
     });
 
@@ -333,7 +333,7 @@ export class FileOperationsService {
       type: 'file_copied',
       filePath: targetPath,
       sourcePath: sourcePath,
-      userId,
+      userId: String(userId),
       timestamp: new Date().toISOString(),
     });
 
@@ -389,11 +389,17 @@ export class FileOperationsService {
   }
 
   private async invalidateProjectCache(projectId: number): Promise<void> {
-    // Простая инвалидация - удаляем кэш структуры файлов проекта
-    const cacheKey = `file_tree:${projectId}:`;
-    await this.cacheManager.del(cacheKey);
-
-    this.logger.log(`Invalidated cache for project ${projectId}`);
+    // Версионная инвалидация: увеличиваем версию, которую использует FileTreeService в ключах кэша
+    const versionKey = `file_tree:v:${projectId}`;
+    try {
+      const currentRaw = await this.cacheManager.get<string | number>(versionKey);
+      const current = typeof currentRaw === 'number' ? currentRaw : Number(currentRaw || 1);
+      const next = current + 1;
+      await this.cacheManager.set(versionKey, next, 0);
+      this.logger.log(`Bumped file tree cache version for project ${projectId} to ${next}`);
+    } catch (e) {
+      this.logger.warn(`Failed to bump cache version for project ${projectId}: ${e?.message || e}`);
+    }
   }
 
   private getMimeType(filename: string): string {

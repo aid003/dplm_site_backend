@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../../database/database.service';
 import { LoggerService } from '../../../logger/logger.service';
 import { FilesGateway } from '../files.gateway';
-import { SaveFileContentDto, SaveFileContentResponseDto } from '../dto/file-content.dto';
+import { SaveFileContentDto, FileContentResponseDto } from '../dto/file-content.dto';
 import { FileType, FilePermissions } from '../../../../generated/prisma';
 
 @Injectable()
@@ -15,7 +15,7 @@ export class FileSaveService {
     private readonly filesGateway: FilesGateway,
   ) {}
 
-  async saveFileContent(projectId: string, dto: SaveFileContentDto, userId: number): Promise<SaveFileContentResponseDto> {
+  async saveFileContent(projectId: string, dto: SaveFileContentDto, userId: number): Promise<FileContentResponseDto> {
     const numericProjectId = this.parseId(projectId);
 
     await this.checkProjectAccess(numericProjectId, userId);
@@ -69,19 +69,38 @@ export class FileSaveService {
     this.filesGateway.notifyFileChanged(numericProjectId, {
       type: 'file_saved',
       filePath: normalizedPath,
-      userId,
+      userId: String(userId),
       timestamp: new Date().toISOString(),
     });
+
+    // Инкрементируем версию кэша дерева файлов (на случай, если имя/путь/размер влияет на UI)
+    try {
+      const versionKey = `file_tree:v:${numericProjectId}`;
+      const currentRaw = await (this as any).cacheManager?.get?.(versionKey);
+      const current = typeof currentRaw === 'number' ? currentRaw : Number(currentRaw || 1);
+      const next = current + 1;
+      await (this as any).cacheManager?.set?.(versionKey, next, 0);
+    } catch {}
+
+    const encoding = dto.encoding || 'utf8';
+    const size = Buffer.byteLength(dto.content, encoding === 'utf16' ? 'utf16le' : 'utf8');
 
     return {
       id: String(updatedFile.id),
       path: updatedFile.path,
       name: updatedFile.name,
-      size: updatedFile.size,
+      content: dto.content,
+      size,
       mimeType: updatedFile.mimeType || undefined,
-      permissions: updatedFile.permissions,
+      encoding,
+      permissions: updatedFile.permissions as unknown as string,
+      createdAt: updatedFile.createdAt.toISOString(),
       updatedAt: updatedFile.updatedAt.toISOString(),
-      version: await this.getFileVersionCount(file.id),
+      etag: this.generateETag({
+        path: updatedFile.path,
+        updatedAt: updatedFile.updatedAt.toISOString(),
+        size,
+      }),
     };
   }
 
@@ -168,5 +187,11 @@ export class FileSaveService {
       throw new HttpException('Некорректный идентификатор', HttpStatus.BAD_REQUEST);
     }
     return n;
+  }
+
+  private generateETag(data: any): string {
+    const hash = require('crypto').createHash('md5');
+    hash.update(JSON.stringify(data));
+    return `"${hash.digest('hex')}"`;
   }
 }

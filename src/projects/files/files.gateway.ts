@@ -12,14 +12,13 @@ import { LoggerService } from '../../logger/logger.service';
 import { DatabaseService } from '../../database/database.service';
 
 interface AuthenticatedSocket extends Socket {
-  userId?: number;
   projectId?: number;
 }
 
 interface FileChangeEvent {
   type: 'file_opened' | 'file_closed' | 'file_saved' | 'file_created' | 'file_deleted' | 'file_moved' | 'file_copied' | 'file_restored' | 'directory_created';
   filePath: string;
-  userId: number;
+  userId: string;
   timestamp: string;
   oldPath?: string;
   sourcePath?: string;
@@ -34,7 +33,7 @@ interface CursorPosition {
 }
 
 interface UserActivity {
-  userId: number;
+  userId: string;
   userName: string;
   userEmail: string;
   filePath: string;
@@ -45,6 +44,8 @@ interface UserActivity {
 @WebSocketGateway({
   cors: {
     origin: '*',
+    methods: ['GET', 'POST'],
+    credentials: true,
   },
   namespace: '/projects',
 })
@@ -62,75 +63,52 @@ export class FilesGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   async handleConnection(client: AuthenticatedSocket) {
     try {
-      // Получаем токен из query параметров
-      const token = client.handshake.query.token as string;
+      // Получаем projectId из query параметров (авторизация отключена)
       const projectId = client.handshake.query.projectId as string;
 
-      if (!token || !projectId) {
-        this.logger.warn('WebSocket connection rejected: missing token or projectId');
+      if (!projectId) {
+        this.logger.warn('WebSocket connection rejected: missing projectId');
         client.disconnect();
         return;
       }
 
-      // Проверяем токен и получаем пользователя
-      const session = await this.db.session.findUnique({
-        where: { token },
-        include: { user: true },
-      });
-
-      if (!session || !session.user) {
-        this.logger.warn('WebSocket connection rejected: invalid token');
-        client.disconnect();
-        return;
-      }
-
-      // Проверяем доступ к проекту
+      // Проверяем существование проекта
       const numericProjectId = parseInt(projectId);
       const project = await this.db.project.findFirst({
         where: {
           id: numericProjectId,
-          OR: [
-            { ownerId: session.user.id },
-            {
-              members: {
-                some: {
-                  userId: session.user.id,
-                },
-              },
-            },
-          ],
+          status: 'ACTIVE',
         },
       });
 
       if (!project) {
-        this.logger.warn(`WebSocket connection rejected: no access to project ${projectId}`);
+        this.logger.warn(`WebSocket connection rejected: project ${projectId} not found or inactive`);
         client.disconnect();
         return;
       }
 
-      // Сохраняем информацию о пользователе в сокете
-      client.userId = session.user.id;
+      // Сохраняем информацию о проекте в сокете
       client.projectId = numericProjectId;
 
       // Подключаем к комнате проекта
       client.join(`project:${numericProjectId}`);
 
-      // Добавляем пользователя в список активных пользователей
-      this.addUserToProject(numericProjectId, session.user);
+      // Добавляем анонимного пользователя в список активных пользователей
+      this.addAnonymousUserToProject(numericProjectId);
 
       // Уведомляем других пользователей о подключении
       client.to(`project:${numericProjectId}`).emit('user_joined', {
-        userId: session.user.id,
-        userName: session.user.name || session.user.email,
-        userEmail: session.user.email,
+        userId: `anonymous_${client.id}`,
+        userName: 'Anonymous User',
+        userEmail: 'anonymous@example.com',
         timestamp: new Date().toISOString(),
       });
 
       // Отправляем список активных пользователей новому пользователю
       const activeUsers = this.getActiveUsers(numericProjectId);
-      client.emit('active_users', activeUsers);
+      client.emit('active_users', { users: activeUsers });
 
-      this.logger.log(`User ${session.user.email} connected to project ${projectId}`);
+      this.logger.log(`Anonymous user connected to project ${projectId}`);
     } catch (error) {
       this.logger.error('WebSocket connection error:', error);
       client.disconnect();
@@ -138,17 +116,17 @@ export class FilesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(client: AuthenticatedSocket) {
-    if (client.userId && client.projectId) {
-      // Удаляем пользователя из списка активных
-      this.removeUserFromProject(client.projectId, client.userId);
+    if (client.projectId) {
+      // Удаляем анонимного пользователя из списка активных
+      this.removeAnonymousUserFromProject(client.projectId, client.id);
 
       // Уведомляем других пользователей об отключении
       client.to(`project:${client.projectId}`).emit('user_left', {
-        userId: client.userId,
+        userId: `anonymous_${client.id}`,
         timestamp: new Date().toISOString(),
       });
 
-      this.logger.log(`User ${client.userId} disconnected from project ${client.projectId}`);
+      this.logger.log(`Anonymous user disconnected from project ${client.projectId}`);
     }
   }
 
@@ -157,23 +135,20 @@ export class FilesGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { filePath: string },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    if (!client.userId || !client.projectId) return;
+    if (!client.projectId) return;
 
-    const user = await this.getUserById(client.userId);
-    if (!user) return;
-
-    this.updateUserActivity(client.projectId, client.userId, {
-      userId: client.userId,
-      userName: user.name || user.email,
-      userEmail: user.email,
+    this.updateAnonymousUserActivity(client.projectId, client.id, {
+      userId: `anonymous_${client.id}`,
+      userName: 'Anonymous User',
+      userEmail: 'anonymous@example.com',
       filePath: data.filePath,
       lastSeen: new Date(),
     });
 
     // Уведомляем других пользователей
     client.to(`project:${client.projectId}`).emit('file_opened', {
-      userId: client.userId,
-      userName: user.name || user.email,
+      userId: `anonymous_${client.id}`,
+      userName: 'Anonymous User',
       filePath: data.filePath,
       timestamp: new Date().toISOString(),
     });
@@ -184,18 +159,15 @@ export class FilesGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { filePath: string },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    if (!client.userId || !client.projectId) return;
-
-    const user = await this.getUserById(client.userId);
-    if (!user) return;
+    if (!client.projectId) return;
 
     // Удаляем активность для этого файла
-    this.removeUserFileActivity(client.projectId, client.userId, data.filePath);
+    this.removeAnonymousUserFileActivity(client.projectId, client.id, data.filePath);
 
     // Уведомляем других пользователей
     client.to(`project:${client.projectId}`).emit('file_closed', {
-      userId: client.userId,
-      userName: user.name || user.email,
+      userId: `anonymous_${client.id}`,
+      userName: 'Anonymous User',
       filePath: data.filePath,
       timestamp: new Date().toISOString(),
     });
@@ -206,15 +178,12 @@ export class FilesGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { filePath: string; cursor: CursorPosition },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    if (!client.userId || !client.projectId) return;
+    if (!client.projectId) return;
 
-    const user = await this.getUserById(client.userId);
-    if (!user) return;
-
-    this.updateUserActivity(client.projectId, client.userId, {
-      userId: client.userId,
-      userName: user.name || user.email,
-      userEmail: user.email,
+    this.updateAnonymousUserActivity(client.projectId, client.id, {
+      userId: `anonymous_${client.id}`,
+      userName: 'Anonymous User',
+      userEmail: 'anonymous@example.com',
       filePath: data.filePath,
       cursor: data.cursor,
       lastSeen: new Date(),
@@ -222,8 +191,8 @@ export class FilesGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // Уведомляем других пользователей о движении курсора
     client.to(`project:${client.projectId}`).emit('cursor_moved', {
-      userId: client.userId,
-      userName: user.name || user.email,
+      userId: `anonymous_${client.id}`,
+      userName: 'Anonymous User',
       filePath: data.filePath,
       cursor: data.cursor,
       timestamp: new Date().toISOString(),
@@ -235,15 +204,12 @@ export class FilesGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { filePath: string; content: string },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    if (!client.userId || !client.projectId) return;
-
-    const user = await this.getUserById(client.userId);
-    if (!user) return;
+    if (!client.projectId) return;
 
     // Уведомляем других пользователей об изменении содержимого
     client.to(`project:${client.projectId}`).emit('content_changed', {
-      userId: client.userId,
-      userName: user.name || user.email,
+      userId: `anonymous_${client.id}`,
+      userName: 'Anonymous User',
       filePath: data.filePath,
       content: data.content,
       timestamp: new Date().toISOString(),
@@ -262,7 +228,7 @@ export class FilesGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const projectUserMap = this.projectUsers.get(projectId)!;
     projectUserMap.set(user.id, {
-      userId: user.id,
+      userId: String(user.id),
       userName: user.name || user.email,
       userEmail: user.email,
       filePath: '',
@@ -316,5 +282,49 @@ export class FilesGateway implements OnGatewayConnection, OnGatewayDisconnect {
       where: { id: userId },
       select: { id: true, name: true, email: true },
     });
+  }
+
+  // Методы для работы с анонимными пользователями
+  private addAnonymousUserToProject(projectId: number) {
+    if (!this.projectUsers.has(projectId)) {
+      this.projectUsers.set(projectId, new Map());
+    }
+    
+    const anonymousId = `anonymous_${Date.now()}`;
+    this.projectUsers.get(projectId)!.set(anonymousId as any, {
+      userId: anonymousId,
+      userName: 'Anonymous User',
+      userEmail: 'anonymous@example.com',
+      filePath: '',
+      lastSeen: new Date(),
+    });
+  }
+
+  private removeAnonymousUserFromProject(projectId: number, socketId: string) {
+    const projectUsers = this.projectUsers.get(projectId);
+    if (projectUsers) {
+      const anonymousId = `anonymous_${socketId}`;
+      projectUsers.delete(anonymousId as any);
+    }
+  }
+
+  private updateAnonymousUserActivity(projectId: number, socketId: string, activity: UserActivity) {
+    const projectUsers = this.projectUsers.get(projectId);
+    if (projectUsers) {
+      const anonymousId = `anonymous_${socketId}`;
+      projectUsers.set(anonymousId as any, activity);
+    }
+  }
+
+  private removeAnonymousUserFileActivity(projectId: number, socketId: string, filePath: string) {
+    const projectUsers = this.projectUsers.get(projectId);
+    if (projectUsers) {
+      const anonymousId = `anonymous_${socketId}`;
+      const user = projectUsers.get(anonymousId as any);
+      if (user) {
+        user.lastSeen = new Date();
+        // Можно добавить логику для удаления активности конкретного файла
+      }
+    }
   }
 }

@@ -34,6 +34,11 @@ export class ProjectsController {
       storage: diskStorage({
         destination: 'uploads/projects',
         filename: (req, file, cb) => {
+          console.log('Multer processing file:', {
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+            size: file.size
+          });
           const safe = file.originalname.replace(/[^a-zA-Z0-9_.-]/g, '_');
           const ext = extname(safe).toLowerCase();
           const base = safe.split('.').slice(0, -1).join('.') || 'project';
@@ -41,6 +46,20 @@ export class ProjectsController {
           cb(null, unique);
         },
       }),
+      // Временно убираем fileFilter для отладки
+      // fileFilter: (req, file, cb) => {
+      //   console.log('Multer fileFilter:', {
+      //     originalname: file.originalname,
+      //     mimetype: file.mimetype
+      //   });
+      //   const ext = extname(file.originalname).toLowerCase();
+      //   if (['.zip', '.rar'].includes(ext)) {
+      //     cb(null, true);
+      //   } else {
+      //     console.log('File rejected by fileFilter:', ext);
+      //     cb(new Error('Неподдерживаемый тип файла'), false);
+      //   }
+      // },
     }),
   )
   async create(
@@ -48,6 +67,13 @@ export class ProjectsController {
     @UploadedFile() file: UploadedProjectFile | undefined,
     @CurrentUser() user: CurrentUserType,
   ) {
+    console.log('Received file:', {
+      originalname: file?.originalname,
+      mimetype: file?.mimetype,
+      size: file?.size,
+      filename: file?.filename,
+      path: file?.path
+    });
     return this.projectsService.create(body, file, user);
   }
 
@@ -107,6 +133,11 @@ export class ProjectsController {
   @Post(':id/restore')
   async restore(@Param('id') id: string, @CurrentUser() user: CurrentUserType) {
     return this.projectsService.restore(id, user.id);
+  }
+
+  @Get(':id/stats')
+  async getStats(@Param('id') id: string, @CurrentUser() user: CurrentUserType) {
+    return this.projectsService.getProjectStats(id, user.id);
   }
 }
 

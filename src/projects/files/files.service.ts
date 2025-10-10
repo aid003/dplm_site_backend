@@ -6,7 +6,7 @@ import { FileVersionService } from './services/file-version.service';
 import { FileDraftService } from './services/file-draft.service';
 import { FileSaveService } from './services/file-save.service';
 import { GetFileTreeQueryDto, FileTreeResponseDto } from './dto/file-tree.dto';
-import { GetFileContentQueryDto, FileContentResponseDto, SaveFileContentDto, SaveFileContentResponseDto } from './dto/file-content.dto';
+import { GetFileContentQueryDto, FileContentResponseDto, SaveFileContentDto } from './dto/file-content.dto';
 import { CreateFileDto, CreateDirectoryDto, MoveFileDto, CopyFileDto, DeleteFileQueryDto, FileOperationResponseDto } from './dto/file-operations.dto';
 import { GetFileHistoryQueryDto, FileHistoryResponseDto, RestoreVersionDto, CompareVersionsDto, VersionDiffDto } from './dto/file-history.dto';
 import { SaveDraftDto, GetDraftsResponseDto, RestoreDraftDto } from './dto/draft.dto';
@@ -42,7 +42,7 @@ export class FilesService {
     return this.fileContentService.getFileContent(projectId, query, userId);
   }
 
-  async saveFileContent(projectId: string, dto: SaveFileContentDto, userId: number): Promise<SaveFileContentResponseDto> {
+  async saveFileContent(projectId: string, dto: SaveFileContentDto, userId: number): Promise<FileContentResponseDto> {
     return this.fileSaveService.saveFileContent(projectId, dto, userId);
   }
 

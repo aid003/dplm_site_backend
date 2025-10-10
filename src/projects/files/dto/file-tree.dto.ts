@@ -1,4 +1,5 @@
 import { IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { FileType, FilePermissions } from '../../../../generated/prisma';
 
 export class FileTreeItemDto {
@@ -24,6 +25,12 @@ export class GetFileTreeQueryDto {
 
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.toLowerCase() === 'true';
+    }
+    return value;
+  })
   includeSystemFiles?: boolean;
 
   @IsOptional()
@@ -32,10 +39,22 @@ export class GetFileTreeQueryDto {
 
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.toLowerCase() === 'true';
+    }
+    return value;
+  })
   lazy?: boolean;
 
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.toLowerCase() === 'true';
+    }
+    return value;
+  })
   loadChildren?: boolean;
 }
 

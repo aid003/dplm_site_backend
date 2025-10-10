@@ -12,7 +12,7 @@ async function bootstrap() {
   });
   app.enableCors({
     origin: process.env.CORS_ORIGIN || true,
-    methods: 'GET,POST,PATCH,DELETE',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: 'Content-Type,Authorization',
     credentials: true,
   });

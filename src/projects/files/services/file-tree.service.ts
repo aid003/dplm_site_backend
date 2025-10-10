@@ -28,8 +28,15 @@ export class FileTreeService {
     const basePath = query.path || '';
     const normalizedPath = this.normalizePath(basePath);
 
+    // Получаем версию кэша для проекта (для инвалидации по версии)
+    const versionKey = `${this.CACHE_FILE_TREE}:v:${numericProjectId}`;
+    const versionRaw = await this.cacheManager.get<string | number>(versionKey);
+    const version = typeof versionRaw === 'number' ? versionRaw : Number(versionRaw || 1);
+
     // Создаем ключ кэша для структуры файлов проекта
-    const cacheKey = this.getCacheKey(this.CACHE_FILE_TREE, `${numericProjectId}:${normalizedPath}:${query.lazy || false}:${query.includeSystemFiles || false}:${query.search || ''}`);
+    const lazy = typeof query.lazy === 'string' ? query.lazy === 'true' : !!query.lazy;
+    const includeSystemFiles = typeof query.includeSystemFiles === 'string' ? query.includeSystemFiles === 'true' : !!query.includeSystemFiles;
+    const cacheKey = this.getCacheKey(this.CACHE_FILE_TREE, `${numericProjectId}:${version}:${normalizedPath}:${lazy}:${includeSystemFiles}:${query.search || ''}`);
 
     // Пытаемся получить данные из кэша
     const cachedResult = await this.cacheManager.get<FileTreeResponseDto>(cacheKey);
@@ -39,13 +46,13 @@ export class FileTreeService {
     }
 
     // Определяем глубину загрузки в зависимости от режима
-    const maxDepth = query.lazy ? 1 : this.MAX_DIRECTORY_DEPTH;
+    const maxDepth = lazy ? 1 : this.MAX_DIRECTORY_DEPTH;
 
     // Получаем файлы из базы данных с учетом глубины
     const files = await this.getFilesWithDepth(numericProjectId, normalizedPath, maxDepth);
 
     // Фильтруем системные файлы если не запрошены
-    const filteredFiles = query.includeSystemFiles
+    const filteredFiles = includeSystemFiles
       ? files
       : files.filter(file => !this.SYSTEM_FILES.has(file.name));
 
@@ -57,7 +64,7 @@ export class FileTreeService {
         )
       : filteredFiles;
 
-    const treeItems = await this.buildFileTree(searchResults, normalizedPath, query.includeSystemFiles || false, query.lazy);
+    const treeItems = await this.buildFileTree(searchResults, normalizedPath, includeSystemFiles, lazy);
 
     const result = {
       items: treeItems,

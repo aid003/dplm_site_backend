@@ -122,7 +122,7 @@ export class FileVersionService {
       type: 'file_restored',
       filePath: normalizedPath,
       versionId: String(versionId),
-      userId,
+      userId: String(userId),
       timestamp: new Date().toISOString(),
     });
 

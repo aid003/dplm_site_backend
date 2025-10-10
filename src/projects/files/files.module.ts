@@ -5,7 +5,6 @@ import { FilesService } from './files.service';
 import { FilesGateway } from './files.gateway';
 import { LoggerModule } from '../../logger/logger.module';
 import { DatabaseModule } from '../../database/database.module';
-
 // Сервисы
 import { FileTreeService } from './services/file-tree.service';
 import { FileContentService } from './services/file-content.service';
