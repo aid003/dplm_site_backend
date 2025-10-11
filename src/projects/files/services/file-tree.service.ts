@@ -108,9 +108,7 @@ export class FileTreeService {
     });
 
     // Фильтруем системные файлы если не запрошены
-    const filteredChildren = false
-      ? directChildren
-      : directChildren.filter(file => !this.SYSTEM_FILES.has(file.name));
+    const filteredChildren = directChildren.filter(file => !this.SYSTEM_FILES.has(file.name));
 
     const treeItems = await this.buildFileTree(filteredChildren, parentPath, false, false);
 
@@ -138,6 +136,10 @@ export class FileTreeService {
       // Для ленивой загрузки загружаем только корневой уровень
       return files.filter(file => {
         if (file.path === basePath) return true;
+        if (!basePath) {
+          // Если базовый путь пустой, берем файлы первого уровня
+          return this.isRootLevel(file.path);
+        }
         const relativePath = file.path.substring(basePath.length + (basePath ? 1 : 0));
         return !relativePath.includes('/');
       });
@@ -169,7 +171,7 @@ export class FileTreeService {
       pathMap.set(file.path, item);
 
       // Если это корневой элемент, добавляем в дерево
-      if (file.path === basePath || (basePath === '' && !file.path.includes('/'))) {
+      if (file.path === basePath || (basePath === '' && this.isRootLevel(file.path))) {
         tree.push(item);
       }
     }
@@ -212,6 +214,8 @@ export class FileTreeService {
   }
 
   private async checkProjectAccess(projectId: number, userId: number): Promise<void> {
+    console.log(`Проверка доступа к проекту ${projectId} для пользователя ${userId}`);
+
     const project = await this.db.project.findFirst({
       where: {
         id: projectId,
@@ -228,7 +232,13 @@ export class FileTreeService {
       },
     });
 
+    console.log(`Проект найден: ${!!project}`);
+    if (project) {
+      console.log(`Владелец проекта: ${project.ownerId}, текущий пользователь: ${userId}`);
+    }
+
     if (!project) {
+      console.log(`Доступ запрещен к проекту ${projectId} для пользователя ${userId}`);
       throw new HttpException('Проект не найден или нет доступа', HttpStatus.NOT_FOUND);
     }
   }
@@ -247,5 +257,13 @@ export class FileTreeService {
       throw new HttpException('Некорректный идентификатор', HttpStatus.BAD_REQUEST);
     }
     return n;
+  }
+
+  private isRootLevel(filePath: string): boolean {
+    if (!filePath) return false;
+    // Корневой уровень - это файлы с путем, который не содержит слешей
+    // или файлы с путем, состоящим только из одного уровня (например, "folder")
+    const parts = filePath.split('/');
+    return parts.length === 1;
   }
 }

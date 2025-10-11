@@ -1,0 +1,837 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2025-10-11T12:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v10.0.0",
+  "resources": [
+    {
+      "_id": "req_main_get",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Основной роут приложения",
+      "headers": [],
+      "method": "GET",
+      "name": "GET /",
+      "parameters": [],
+      "parentId": "fld_main",
+      "url": "{{baseUrl}}/"
+    },
+    {
+      "_id": "req_auth_register",
+      "_type": "request",
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"Имя Пользователя\"\n}"
+      },
+      "description": "Регистрация нового пользователя",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "POST",
+      "name": "POST /auth/register",
+      "parameters": [
+        {
+          "key": "next",
+          "value": "/dashboard",
+          "description": "URL для редиректа после регистрации",
+          "enabled": false
+        }
+      ],
+      "parentId": "fld_auth",
+      "url": "{{baseUrl}}/auth/register"
+    },
+    {
+      "_id": "req_auth_login",
+      "_type": "request",
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+      },
+      "description": "Вход в систему",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "POST",
+      "name": "POST /auth/login",
+      "parameters": [
+        {
+          "key": "next",
+          "value": "/dashboard",
+          "description": "URL для редиректа после входа",
+          "enabled": false
+        }
+      ],
+      "parentId": "fld_auth",
+      "url": "{{baseUrl}}/auth/login"
+    },
+    {
+      "_id": "req_auth_session",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Получение текущей сессии пользователя (использует куки аутентификации)",
+      "headers": [],
+      "method": "GET",
+      "name": "GET /auth/session",
+      "parameters": [],
+      "parentId": "fld_auth",
+      "url": "{{baseUrl}}/auth/session"
+    },
+    {
+      "_id": "req_auth_session_with_cookie",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Проверка сессии с явным указанием куки",
+      "headers": [
+        {
+          "key": "Cookie",
+          "value": "session-token=your-session-token-here",
+          "description": "Кука сессии для аутентификации",
+          "enabled": true
+        }
+      ],
+      "method": "GET",
+      "name": "GET /auth/session (с куки)",
+      "parameters": [],
+      "parentId": "fld_auth",
+      "url": "{{baseUrl}}/auth/session"
+    },
+    {
+      "_id": "req_auth_logout",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Выход из системы",
+      "headers": [],
+      "method": "POST",
+      "name": "POST /auth/logout",
+      "parameters": [],
+      "parentId": "fld_auth",
+      "url": "{{baseUrl}}/auth/logout"
+    },
+    {
+      "_id": "req_projects_create",
+      "_type": "request",
+      "authentication": {},
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          {
+            "type": "text",
+            "key": "name",
+            "value": "Название проекта",
+            "enabled": true
+          },
+          {
+            "type": "text",
+            "key": "description",
+            "value": "Описание проекта",
+            "enabled": true
+          },
+          {
+            "type": "file",
+            "key": "projectFile",
+            "value": "",
+            "enabled": true
+          }
+        ]
+      },
+      "description": "Создание нового проекта с файлом",
+      "headers": [],
+      "method": "POST",
+      "name": "POST /projects",
+      "parameters": [],
+      "parentId": "fld_projects",
+      "url": "{{baseUrl}}/projects"
+    },
+    {
+      "_id": "req_projects_list",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Получение списка проектов с полной фильтрацией",
+      "headers": [],
+      "method": "GET",
+      "name": "GET /projects",
+      "parameters": [
+        {
+          "key": "search",
+          "value": "",
+          "description": "Поиск по названию или описанию проектов",
+          "enabled": false
+        },
+        {
+          "key": "status",
+          "value": "",
+          "description": "Фильтр по статусу (active, archived, deleted)",
+          "enabled": false
+        },
+        {
+          "key": "limit",
+          "value": "10",
+          "description": "Количество проектов на странице (по умолчанию 20)",
+          "enabled": true
+        },
+        {
+          "key": "offset",
+          "value": "0",
+          "description": "Смещение для пагинации (по умолчанию 0)",
+          "enabled": true
+        }
+      ],
+      "parentId": "fld_projects",
+      "url": "{{baseUrl}}/projects"
+    },
+    {
+      "_id": "req_projects_list_search",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Поиск проектов по названию",
+      "headers": [],
+      "method": "GET",
+      "name": "GET /projects (поиск)",
+      "parameters": [
+        {
+          "key": "search",
+          "value": "react",
+          "description": "Поиск по названию проекта",
+          "enabled": true
+        },
+        {
+          "key": "limit",
+          "value": "20",
+          "description": "Количество результатов",
+          "enabled": true
+        }
+      ],
+      "parentId": "fld_projects",
+      "url": "{{baseUrl}}/projects"
+    },
+    {
+      "_id": "req_projects_list_archived",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Получение только архивированных проектов",
+      "headers": [],
+      "method": "GET",
+      "name": "GET /projects (архивированные)",
+      "parameters": [
+        {
+          "key": "status",
+          "value": "archived",
+          "description": "Фильтр по архивированным проектам",
+          "enabled": true
+        }
+      ],
+      "parentId": "fld_projects",
+      "url": "{{baseUrl}}/projects"
+    },
+    {
+      "_id": "req_projects_get",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Получение проекта по ID",
+      "headers": [],
+      "method": "GET",
+      "name": "GET /projects/:id",
+      "parameters": [],
+      "parentId": "fld_projects",
+      "url": "{{baseUrl}}/projects/123"
+    },
+    {
+      "_id": "req_projects_update",
+      "_type": "request",
+      "authentication": {},
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          {
+            "type": "text",
+            "key": "name",
+            "value": "Обновленное название",
+            "enabled": true
+          },
+          {
+            "type": "text",
+            "key": "description",
+            "value": "Обновленное описание",
+            "enabled": true
+          },
+          {
+            "type": "file",
+            "key": "projectFile",
+            "value": "",
+            "enabled": false
+          }
+        ]
+      },
+      "description": "Обновление проекта",
+      "headers": [],
+      "method": "PATCH",
+      "name": "PATCH /projects/:id",
+      "parameters": [],
+      "parentId": "fld_projects",
+      "url": "{{baseUrl}}/projects/123"
+    },
+    {
+      "_id": "req_projects_delete",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Удаление проекта",
+      "headers": [],
+      "method": "DELETE",
+      "name": "DELETE /projects/:id",
+      "parameters": [],
+      "parentId": "fld_projects",
+      "url": "{{baseUrl}}/projects/123"
+    },
+    {
+      "_id": "req_projects_archive",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Архивирование проекта",
+      "headers": [],
+      "method": "POST",
+      "name": "POST /projects/:id/archive",
+      "parameters": [],
+      "parentId": "fld_projects",
+      "url": "{{baseUrl}}/projects/123/archive"
+    },
+    {
+      "_id": "req_projects_restore",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Восстановление проекта из архива",
+      "headers": [],
+      "method": "POST",
+      "name": "POST /projects/:id/restore",
+      "parameters": [],
+      "parentId": "fld_projects",
+      "url": "{{baseUrl}}/projects/123/restore"
+    },
+    {
+      "_id": "req_projects_stats",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Получение статистики проекта",
+      "headers": [],
+      "method": "GET",
+      "name": "GET /projects/:id/stats",
+      "parameters": [],
+      "parentId": "fld_projects",
+      "url": "{{baseUrl}}/projects/123/stats"
+    },
+    {
+      "_id": "req_files_tree",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Получение дерева файлов проекта с полной настройкой параметров",
+      "headers": [],
+      "method": "GET",
+      "name": "GET /projects/:projectId/files/tree",
+      "parameters": [
+        {
+          "key": "path",
+          "value": "",
+          "description": "Путь к директории (по умолчанию корень)",
+          "enabled": false
+        },
+        {
+          "key": "includeSystemFiles",
+          "value": "false",
+          "description": "Включать системные файлы",
+          "enabled": true
+        },
+        {
+          "key": "search",
+          "value": "",
+          "description": "Поиск по названию файлов",
+          "enabled": false
+        },
+        {
+          "key": "lazy",
+          "value": "true",
+          "description": "Ленивая загрузка (по умолчанию false)",
+          "enabled": true
+        },
+        {
+          "key": "loadChildren",
+          "value": "false",
+          "description": "Загружать дочерние элементы (для ленивой загрузки)",
+          "enabled": false
+        }
+      ],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files/tree"
+    },
+    {
+      "_id": "req_files_children",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Получение дочерних элементов директории",
+      "headers": [],
+      "method": "GET",
+      "name": "GET /projects/:projectId/files/tree/children",
+      "parameters": [
+        {
+          "key": "path",
+          "value": "src",
+          "description": "Путь к директории",
+          "enabled": true
+        }
+      ],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files/tree/children"
+    },
+    {
+      "_id": "req_files_content",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Получение содержимого файла с пагинацией и кэшированием",
+      "headers": [
+        {
+          "key": "If-None-Match",
+          "value": "",
+          "description": "ETag для условных запросов (кэширование)",
+          "enabled": false
+        }
+      ],
+      "method": "GET",
+      "name": "GET /projects/:projectId/files/content",
+      "parameters": [
+        {
+          "key": "filePath",
+          "value": "src/app.ts",
+          "description": "Путь к файлу (обязательный)",
+          "enabled": true
+        },
+        {
+          "key": "encoding",
+          "value": "utf8",
+          "description": "Кодировка файла (utf8, utf16, ascii, latin1)",
+          "enabled": true
+        },
+        {
+          "key": "startLine",
+          "value": "1",
+          "description": "Начальная строка для пагинации (по умолчанию 1)",
+          "enabled": true
+        },
+        {
+          "key": "endLine",
+          "value": "100",
+          "description": "Конечная строка для пагинации",
+          "enabled": false
+        },
+        {
+          "key": "maxLines",
+          "value": "1000",
+          "description": "Максимальное количество строк (по умолчанию 1000, макс. 5000)",
+          "enabled": true
+        }
+      ],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files/content"
+    },
+    {
+      "_id": "req_files_save",
+      "_type": "request",
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"filePath\": \"src/app.ts\",\n  \"content\": \"console.log('Hello World!');\",\n  \"encoding\": \"utf8\",\n  \"lastModified\": \"2025-01-01T00:00:00.000Z\",\n  \"message\": \"Initial commit\"\n}"
+      },
+      "description": "Сохранение содержимого файла с созданием версии",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "PUT",
+      "name": "PUT /projects/:projectId/files/content",
+      "parameters": [],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files/content"
+    },
+    {
+      "_id": "req_files_create_file",
+      "_type": "request",
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"filePath\": \"src\",\n  \"name\": \"newfile.ts\",\n  \"content\": \"// New file content\"\n}"
+      },
+      "description": "Создание нового файла с начальным содержимым",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "POST",
+      "name": "POST /projects/:projectId/files/create-file",
+      "parameters": [],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files/create-file"
+    },
+    {
+      "_id": "req_files_create_file_empty",
+      "_type": "request",
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"filePath\": \"src/utils\",\n  \"name\": \"helpers.ts\"\n}"
+      },
+      "description": "Создание пустого файла",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "POST",
+      "name": "POST /projects/:projectId/files/create-file (пустой)",
+      "parameters": [],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files/create-file"
+    },
+    {
+      "_id": "req_files_create_dir",
+      "_type": "request",
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"filePath\": \"src\",\n  \"name\": \"new-directory\"\n}"
+      },
+      "description": "Создание новой директории",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "POST",
+      "name": "POST /projects/:projectId/files/create-directory",
+      "parameters": [],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files/create-directory"
+    },
+    {
+      "_id": "req_files_delete",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Удаление файла или директории",
+      "headers": [],
+      "method": "DELETE",
+      "name": "DELETE /projects/:projectId/files",
+      "parameters": [
+        {
+          "key": "filePath",
+          "value": "src/oldfile.ts",
+          "description": "Путь к файлу для удаления",
+          "enabled": true
+        }
+      ],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files"
+    },
+    {
+      "_id": "req_files_move",
+      "_type": "request",
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sourcePath\": \"src/oldfile.ts\",\n  \"targetPath\": \"src/utils/oldfile.ts\"\n}"
+      },
+      "description": "Перемещение файла в другую директорию",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "POST",
+      "name": "POST /projects/:projectId/files/move",
+      "parameters": [],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files/move"
+    },
+    {
+      "_id": "req_files_move_directory",
+      "_type": "request",
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sourcePath\": \"src/components\",\n  \"targetPath\": \"src/shared/components\"\n}"
+      },
+      "description": "Перемещение директории",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "POST",
+      "name": "POST /projects/:projectId/files/move (директория)",
+      "parameters": [],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files/move"
+    },
+    {
+      "_id": "req_files_copy",
+      "_type": "request",
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sourcePath\": \"src/file.ts\",\n  \"targetPath\": \"src/utils/file.ts\"\n}"
+      },
+      "description": "Копирование файла в другую директорию",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "POST",
+      "name": "POST /projects/:projectId/files/copy",
+      "parameters": [],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files/copy"
+    },
+    {
+      "_id": "req_files_copy_directory",
+      "_type": "request",
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sourcePath\": \"src/components\",\n  \"targetPath\": \"src/shared/components-copy\"\n}"
+      },
+      "description": "Копирование директории",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "POST",
+      "name": "POST /projects/:projectId/files/copy (директория)",
+      "parameters": [],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files/copy"
+    },
+    {
+      "_id": "req_files_history",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Получение истории версий файла с пагинацией",
+      "headers": [],
+      "method": "GET",
+      "name": "GET /projects/:projectId/files/history",
+      "parameters": [
+        {
+          "key": "filePath",
+          "value": "src/app.ts",
+          "description": "Путь к файлу (обязательный)",
+          "enabled": true
+        },
+        {
+          "key": "limit",
+          "value": "50",
+          "description": "Количество версий на странице (по умолчанию 50)",
+          "enabled": true
+        },
+        {
+          "key": "offset",
+          "value": "0",
+          "description": "Смещение для пагинации (по умолчанию 0)",
+          "enabled": true
+        }
+      ],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files/history"
+    },
+    {
+      "_id": "req_files_restore_version",
+      "_type": "request",
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"filePath\": \"src/app.ts\",\n  \"versionId\": \"version-id-here\"\n}"
+      },
+      "description": "Восстановление версии файла",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "POST",
+      "name": "POST /projects/:projectId/files/restore-version",
+      "parameters": [],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files/restore-version"
+    },
+    {
+      "_id": "req_files_compare_versions",
+      "_type": "request",
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"filePath\": \"src/app.ts\",\n  \"versionId1\": \"version1-id\",\n  \"versionId2\": \"version2-id\"\n}"
+      },
+      "description": "Сравнение двух версий файла",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "POST",
+      "name": "POST /projects/:projectId/files/compare-versions",
+      "parameters": [],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files/compare-versions"
+    },
+    {
+      "_id": "req_files_save_draft",
+      "_type": "request",
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"filePath\": \"src/app.ts\",\n  \"content\": \"console.log('Draft content');\",\n  \"encoding\": \"utf8\"\n}"
+      },
+      "description": "Сохранение черновика файла",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "POST",
+      "name": "POST /projects/:projectId/files/draft",
+      "parameters": [],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files/draft"
+    },
+    {
+      "_id": "req_files_get_drafts",
+      "_type": "request",
+      "authentication": {},
+      "body": {},
+      "description": "Получение списка черновиков",
+      "headers": [],
+      "method": "GET",
+      "name": "GET /projects/:projectId/files/drafts",
+      "parameters": [],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files/drafts"
+    },
+    {
+      "_id": "req_files_restore_draft",
+      "_type": "request",
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"filePath\": \"src/app.ts\",\n  \"draftId\": \"draft-id-here\"\n}"
+      },
+      "description": "Восстановление черновика файла",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "POST",
+      "name": "POST /projects/:projectId/files/restore-draft",
+      "parameters": [],
+      "parentId": "fld_files",
+      "url": "{{baseUrl}}/projects/123/files/restore-draft"
+    },
+    {
+      "_id": "fld_main",
+      "_type": "request_group",
+      "name": "Основные роуты",
+      "parentId": "wrk_main"
+    },
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "name": "Аутентификация",
+      "parentId": "wrk_main"
+    },
+    {
+      "_id": "fld_projects",
+      "_type": "request_group",
+      "name": "Проекты",
+      "parentId": "wrk_main"
+    },
+    {
+      "_id": "fld_files",
+      "_type": "request_group",
+      "name": "Файлы проектов",
+      "parentId": "wrk_main"
+    },
+    {
+      "_id": "wrk_main",
+      "_type": "workspace",
+      "name": "DPLM Site Backend API",
+      "description": "Полная документация API для DPLM Site Backend с примерами использования всех эндпоинтов аутентификации, управления проектами и файловыми операциями"
+    },
+    {
+      "_id": "env_main",
+      "_type": "environment",
+      "name": "Base Environment",
+      "data": {
+        "baseUrl": "http://localhost:8000/api",
+        "projectId": "123",
+        "userId": "1",
+        "sessionToken": "your-session-token-here",
+        "filePath": "src/app.ts"
+      },
+      "parentId": "wrk_main"
+    },
+    {
+      "_id": "env_development",
+      "_type": "environment",
+      "name": "Development Environment",
+      "data": {
+        "baseUrl": "http://localhost:8000/api",
+        "wsUrl": "ws://localhost:8000/projects"
+      },
+      "parentId": "wrk_main"
+    },
+    {
+      "_id": "env_production",
+      "_type": "environment",
+      "name": "Production Environment",
+      "data": {
+        "baseUrl": "https://your-domain.com/api",
+        "wsUrl": "wss://your-domain.com/projects"
+      },
+      "parentId": "wrk_main"
+    }
+  ]
+}
